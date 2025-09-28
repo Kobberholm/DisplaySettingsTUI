@@ -193,22 +193,37 @@ func valueModifiedCmd() tea.Cmd {
 func (m *Model) eventLoop() {
 	go func() {
 		defer close(m.chanData)
+
+		var lastData *data
+		timer := time.NewTimer(time.Hour) // Create inactive timer
+		timer.Stop()
+
 		for {
 			select {
 			case <-m.ctx.Done():
 				return
+
 			case d := <-m.chanData:
-				var code VCPCode
-				switch d.s {
-				case brightness:
-					code = VCPBrightness
-				case contrast:
-					code = VCPContrast
-				}
-				value := m.getPercent(d.s) * 100
-				err := setVCP(m.display.Index, code, int(value))
-				if err != nil {
-					log.Error("Error setting VCP value", err)
+				lastData = &d
+				timer.Reset(100 * time.Millisecond) // Reset debounce timer
+
+			case <-timer.C:
+				if lastData != nil {
+					var code VCPCode
+					switch lastData.s {
+					case brightness:
+						code = VCPBrightness
+					case contrast:
+						code = VCPContrast
+					default:
+						panic("unhandled default case")
+					}
+					value := m.getPercent(lastData.s) * 100
+					err := setVCP(m.display.Index, code, int(value))
+					if err != nil {
+						log.Error("Error setting VCP value", err)
+					}
+					lastData = nil
 				}
 			}
 		}
