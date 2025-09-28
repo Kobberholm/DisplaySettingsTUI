@@ -1,7 +1,7 @@
 package main
 
 import (
-	"DisplaySettingsTUI/display"
+	"DisplaySettingsTUI/root"
 	"fmt"
 	"os"
 
@@ -20,7 +20,7 @@ func main() {
 	log.SetOutput(f)
 	log.Info("starting display settings program...")
 
-	m := display.New()
+	m := root.New()
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)

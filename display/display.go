@@ -33,7 +33,7 @@ func (d *Display) Description() string {
 }
 
 // DetectDisplays runs ddcutil detect and returns parsed display information
-func detectDisplays() ([]Display, error) {
+func DetectDisplays() ([]Display, error) {
 	// Execute ddcutil detect command
 	cmd := exec.Command("ddcutil", "detect")
 	output, err := cmd.Output()

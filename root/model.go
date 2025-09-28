@@ -1,6 +1,8 @@
-package display
+package root
 
 import (
+	"DisplaySettingsTUI/display"
+	"DisplaySettingsTUI/settings"
 	"fmt"
 	"strings"
 
@@ -13,11 +15,11 @@ import (
 /* STYLING */
 var (
 	columnStyle = lipgloss.NewStyle().
-		Padding(2, 4)
+			Padding(2, 4)
 	focusedStyle = lipgloss.NewStyle().
-		Padding(2, 4).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("62"))
+			Padding(2, 4).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("62"))
 )
 
 type Model struct {
@@ -45,7 +47,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.next()
 		case "right":
 			m.prev()
+		case "enter":
+			item := m.displayModels[m.index].Items()[0]
+			displayItem, ok := item.(*display.Display)
+			if !ok {
+				// Handle the error - the item wasn't a *display.Display
+				return m, nil // or handle error appropriately
+			}
+			newModel := settings.NewModel(m, displayItem)
+			return newModel, newModel.Init()
 		}
+
 	case tea.WindowSizeMsg:
 		m.loadDisplays(msg.Width, msg.Height)
 	}
@@ -115,7 +127,7 @@ func underlinedTitle(text string) string {
 }
 
 func (m *Model) loadDisplays(width, height int) {
-	displayList, err := detectDisplays()
+	displayList, err := display.DetectDisplays()
 	if err != nil {
 		log.Error("Failed to load displays: %v", err)
 		return
