@@ -2,13 +2,28 @@ package settings
 
 import (
 	"DisplaySettingsTUI/display"
+	"strings"
+	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
+type tickMsg time.Time
+
+const (
+	padding  = 2
+	maxWidth = 80
+)
+
+var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
+
 type Model struct {
-	mainModel tea.Model
-	display   *display.Display
+	mainModel        tea.Model
+	display          *display.Display
+	selectedProperty property
+	models           []progress.Model
 }
 
 func NewModel(mainModel tea.Model, display *display.Display) *Model {
@@ -19,7 +34,13 @@ func NewModel(mainModel tea.Model, display *display.Display) *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	m.selectedProperty = brightness
+	m.models = make([]progress.Model, maxProperty)
+	for i, _ := range m.models {
+		m.models[i] = progress.New(progress.WithDefaultGradient())
+	}
+
+	return tickCmd()
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -30,12 +51,57 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.mainModel, tea.Quit
 		case "esc":
 			return m.mainModel, m.mainModel.Init()
+		case "up", "k":
+			m.previousProperty()
+		case "down", "j":
+			m.previousProperty()
 		}
+	case tickMsg:
+		if m.models[m.selectedProperty].Percent() == 1.0 {
+			m.models[m.selectedProperty].SetPercent(0)
+		}
+
+		// Note that you can also use progress.Model.SetPercent to set the
+		// percentage value explicitly, too.
+		cmd := m.models[m.selectedProperty].IncrPercent(0.25)
+		return m, tea.Batch(tickCmd(), cmd)
+
+	// FrameMsg is sent when the progress bar wants to animate itself
+	case progress.FrameMsg:
+		progressModel, cmd := m.models[m.selectedProperty].Update(msg)
+		m.models[m.selectedProperty] = progressModel.(progress.Model)
+		return m, cmd
 	}
 
 	return m, nil
 }
 
 func (m *Model) View() string {
-	return "Settings are not ready yet"
+	pad := strings.Repeat(" ", padding)
+	return "\n" +
+		pad + m.models[brightness].View() + "\n\n" +
+		pad + m.models[contrast].View() + "\n\n" +
+		pad + helpStyle("Press any key to quit")
+}
+
+func (m *Model) nextProperty() {
+	m.selectedProperty++
+	if m.selectedProperty == maxProperty {
+		m.selectedProperty = 0
+	}
+}
+
+func (m *Model) previousProperty() {
+	if m.selectedProperty == 0 {
+		m.selectedProperty = maxProperty - 1
+		return
+	}
+
+	m.selectedProperty--
+}
+
+func tickCmd() tea.Cmd {
+	return tea.Tick(time.Millisecond*300, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
 }
