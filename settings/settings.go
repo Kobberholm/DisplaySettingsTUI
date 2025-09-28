@@ -26,12 +26,16 @@ func (m *Model) setContrastPercent(vcp *VCPValue) tea.Cmd {
 	return m.models[contrast].SetPercent(float64(vcp.Current) / float64(vcp.Max))
 }
 
-func (m *Model) getPercent() float64 {
+func (m *Model) getPercent(s setting) float64 {
+	return m.models[s].Percent()
+}
+
+func (m *Model) getCurrentSettingPercent() float64 {
 	s := m.getCurrentSetting()
 	return m.models[s].Percent()
 }
 
-func (m *Model) setPercent(percent float64) {
+func (m *Model) setCurrentSettingPercent(percent float64) {
 	s := m.getCurrentSetting()
 	m.models[s].SetPercent(percent)
 }
@@ -39,13 +43,13 @@ func (m *Model) setPercent(percent float64) {
 func (m *Model) increment(v float64) (tea.Model, tea.Cmd) {
 	s := m.getCurrentSetting()
 	cmd := m.models[s].IncrPercent(v)
-	return m, tea.Batch(tickCmd(), cmd)
+	return m, tea.Batch(tickCmd(), cmd, valueModifiedCmd())
 }
 
 func (m *Model) decrement(v float64) (tea.Model, tea.Cmd) {
 	s := m.getCurrentSetting()
 	cmd := m.models[s].DecrPercent(v)
-	return m, tea.Batch(tickCmd(), cmd)
+	return m, tea.Batch(tickCmd(), cmd, valueModifiedCmd())
 }
 
 func (m *Model) update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -73,7 +77,14 @@ func (m *Model) loadInitialValues() tea.Cmd {
 	vcp, err := getVCP(m.display.Index, VCPBrightness)
 	if err != nil {
 		log.Error("could not get VCP settings: ", err)
-		return nil
+	}
+
+	// Just estimates if VCP fails
+	if vcp == nil {
+		vcp = &VCPValue{
+			Current: 50,
+			Max:     100,
+		}
 	}
 
 	cmds[brightness] = m.setBrightnessPercent(vcp)
@@ -81,7 +92,13 @@ func (m *Model) loadInitialValues() tea.Cmd {
 	vcp, err = getVCP(m.display.Index, VCPContrast)
 	if err != nil {
 		log.Error("could not get VCP settings: ", err)
-		return nil
+	}
+
+	if vcp == nil {
+		vcp = &VCPValue{
+			Current: 50,
+			Max:     100,
+		}
 	}
 
 	cmds[contrast] = m.setContrastPercent(vcp)

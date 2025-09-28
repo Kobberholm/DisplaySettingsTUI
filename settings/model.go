@@ -2,16 +2,19 @@ package settings
 
 import (
 	"DisplaySettingsTUI/display"
+	"context"
 	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/log"
 )
 
 type tickMsg time.Time
 type loadInitialValues string
+type valueModified float64
 
 const (
 	padding  = 2
@@ -26,12 +29,25 @@ type Model struct {
 	currentSetting setting
 	models         []progress.Model
 	initialized    bool
+	cancelFunc     context.CancelFunc
+	ctx            context.Context
+	chanData       chan data
+}
+
+type data struct {
+	s setting
 }
 
 func NewModel(mainModel tea.Model, display *display.Display) *Model {
+
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Model{
-		mainModel: mainModel,
-		display:   display,
+		mainModel:  mainModel,
+		display:    display,
+		ctx:        ctx,
+		cancelFunc: cancel,
+		chanData:   make(chan data, 100),
 	}
 }
 
@@ -41,6 +57,8 @@ func (m *Model) Init() tea.Cmd {
 	for i, _ := range m.models {
 		m.models[i] = progress.New(progress.WithDefaultGradient())
 	}
+
+	m.eventLoop()
 
 	return tea.Batch(tickCmd(), loadInitialValuesCmd())
 }
@@ -56,13 +74,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c", "q":
+			m.cancelFunc()
 			return m.mainModel, tea.Quit
 		case "esc":
+			m.cancelFunc()
 			return m.mainModel, m.mainModel.Init()
-		case "up", "k":
+		case "up":
 			m.previousSetting()
-		case "down", "j":
-			m.previousSetting()
+		case "down":
+			m.nextSetting()
 		case "left":
 			return m.decrement(0.05)
 		case "right":
@@ -75,6 +95,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.updateAll(msg)
 	case loadInitialValues:
 		return m, m.loadInitialValues()
+	case valueModified:
+		select {
+		case m.chanData <- data{s: m.getCurrentSetting()}:
+		default:
+			log.Error("Channel is full")
+		}
 	}
 
 	return m, nil
@@ -118,4 +144,35 @@ func loadInitialValuesCmd() tea.Cmd {
 	return func() tea.Msg {
 		return loadInitialValues("")
 	}
+}
+
+func valueModifiedCmd() tea.Cmd {
+	return func() tea.Msg {
+		return valueModified(0)
+	}
+}
+
+func (m *Model) eventLoop() {
+	go func() {
+		defer close(m.chanData)
+		for {
+			select {
+			case <-m.ctx.Done():
+				return
+			case d := <-m.chanData:
+				var code VCPCode
+				switch d.s {
+				case brightness:
+					code = VCPBrightness
+				case contrast:
+					code = VCPContrast
+				}
+				value := m.getPercent(d.s) * 100
+				err := setVCP(m.display.Index, code, int(value))
+				if err != nil {
+					log.Error("Error setting VCP value", err)
+				}
+			}
+		}
+	}()
 }
