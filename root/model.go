@@ -15,11 +15,11 @@ import (
 /* STYLING */
 var (
 	columnStyle = lipgloss.NewStyle().
-			Padding(2, 4)
+		Padding(2, 4)
 	focusedStyle = lipgloss.NewStyle().
-			Padding(2, 4).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("62"))
+		Padding(2, 4).
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("62"))
 )
 
 type Model struct {
@@ -32,9 +32,7 @@ func New() *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-	return func() tea.Msg {
-		return "Loading..."
-	}
+	return tea.SetWindowTitle("DisplaySettingsTUI")
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
