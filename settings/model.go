@@ -111,11 +111,49 @@ func (m *Model) View() string {
 		return "Loading..."
 	}
 
+	// Build rows
+	rows := []string{
+		lipgloss.NewStyle().
+			Foreground(lipgloss.Color("99")).
+			Bold(true).
+			Render("Display Settings ", m.display.Title()),
+		"",
+		m.buildRow(brightness, "Brightness", m.currentSetting == brightness),
+		"",
+		m.buildRow(contrast, "Contrast", m.currentSetting == contrast),
+		"",
+		lipgloss.NewStyle().
+			Foreground(lipgloss.Color("241")).
+			Render("↑/↓ Navigate • ←/→ Adjust • ESC Back • Q Quit"),
+	}
+
+	// Add padding and join
 	pad := strings.Repeat(" ", padding)
-	return "\n" +
-		pad + m.models[brightness].View() + "\n\n" +
-		pad + m.models[contrast].View() + "\n\n" +
-		pad + helpStyle("Press any key to quit")
+	for i, row := range rows {
+		if row != "" {
+			rows[i] = pad + row
+		}
+	}
+
+	return "\n" + strings.Join(rows, "\n")
+}
+
+func (m *Model) buildRow(s setting, label string, selected bool) string {
+	indicator := "  "
+	if selected {
+		indicator = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("86")).
+			Bold(true).
+			Render("▶ ")
+	}
+
+	labelStyled := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252")).
+		Width(12).
+		Align(lipgloss.Left).
+		Render(label + ":")
+
+	return indicator + labelStyled + m.models[s].View()
 }
 
 func (m *Model) nextSetting() {
