@@ -5,8 +5,6 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
-
-	"github.com/charmbracelet/log"
 )
 
 // VCPCode represents VCP feature codes
@@ -51,17 +49,16 @@ func getVCP(displayNum int, vcpCode VCPCode) (*VCPValue, error) {
 	cmd := exec.Command("ddcutil", "getvcp", "-d", strconv.Itoa(displayNum), codeStr)
 	output, err := cmd.Output()
 	if err != nil {
-		log.Error("VCP command failed", "cmd", cmd)
 		return nil, fmt.Errorf("failed to get VCP 0x%02x: %w", vcpCode, err)
 	}
 
-	// Parse output: "current value = XX, maximum value = YY"
-	re := regexp.MustCompile(`current value\s*=\s*(\d+),\s*maximum value\s*=\s*(\d+)`)
+	// Updated regex to handle extra whitespace
+	// Matches: "current value =    50, max value =   100"
+	re := regexp.MustCompile(`current value\s*=\s*(\d+)\s*,\s*max value\s*=\s*(\d+)`)
 	matches := re.FindStringSubmatch(string(output))
 
 	if len(matches) != 3 {
-		log.Error("failed to parse VCP 0x%02x", vcpCode)
-		return nil, fmt.Errorf("could not parse output")
+		return nil, fmt.Errorf("could not parse output: %s", string(output))
 	}
 
 	current, _ := strconv.Atoi(matches[1])
@@ -80,7 +77,6 @@ func setVCP(displayNum int, vcpCode VCPCode, value int) error {
 	cmd := exec.Command("ddcutil", "setvcp", "-d", strconv.Itoa(displayNum), codeStr, strconv.Itoa(value))
 
 	if err := cmd.Run(); err != nil {
-		log.Error("failed to set VCP 0x%02x to %d: %w", vcpCode, value, err)
 		return fmt.Errorf("failed to set VCP 0x%02x to %d: %w", vcpCode, value, err)
 	}
 

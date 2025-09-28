@@ -11,6 +11,7 @@ import (
 )
 
 type tickMsg time.Time
+type loadInitialValues string
 
 const (
 	padding  = 2
@@ -20,10 +21,11 @@ const (
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
 
 type Model struct {
-	mainModel        tea.Model
-	display          *display.Display
-	selectedProperty property
-	models           []progress.Model
+	mainModel      tea.Model
+	display        *display.Display
+	currentSetting setting
+	models         []progress.Model
+	initialized    bool
 }
 
 func NewModel(mainModel tea.Model, display *display.Display) *Model {
@@ -34,21 +36,21 @@ func NewModel(mainModel tea.Model, display *display.Display) *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-	m.selectedProperty = brightness
-	m.models = make([]progress.Model, maxProperty)
+	m.currentSetting = brightness
+	m.models = make([]progress.Model, maxSetting)
 	for i, _ := range m.models {
 		m.models[i] = progress.New(progress.WithDefaultGradient())
 	}
 
-	return tickCmd()
+	return tea.Batch(tickCmd(), loadInitialValuesCmd())
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.models[m.selectedProperty].Width = msg.Width - padding*2 - 4
-		if m.models[m.selectedProperty].Width > maxWidth {
-			m.models[m.selectedProperty].Width = maxWidth
+		m.models[m.currentSetting].Width = msg.Width - padding*2 - 4
+		if m.models[m.currentSetting].Width > maxWidth {
+			m.models[m.currentSetting].Width = maxWidth
 		}
 		return m, nil
 	case tea.KeyMsg:
@@ -58,31 +60,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "esc":
 			return m.mainModel, m.mainModel.Init()
 		case "up", "k":
-			m.previousProperty()
+			m.previousSetting()
 		case "down", "j":
-			m.previousProperty()
+			m.previousSetting()
+		case "left":
+			return m.decrement(0.05)
+		case "right":
+			return m.increment(0.05)
 		}
 	case tickMsg:
-		if m.models[m.selectedProperty].Percent() == 1.0 {
-			m.models[m.selectedProperty].SetPercent(0)
-		}
-
-		// Note that you can also use progress.Model.SetPercent to set the
-		// percentage value explicitly, too.
-		cmd := m.models[m.selectedProperty].IncrPercent(0.25)
-		return m, tea.Batch(tickCmd(), cmd)
-
+		return m, tickCmd()
 	// FrameMsg is sent when the progress bar wants to animate itself
 	case progress.FrameMsg:
-		progressModel, cmd := m.models[m.selectedProperty].Update(msg)
-		m.models[m.selectedProperty] = progressModel.(progress.Model)
-		return m, cmd
+		return m.updateAll(msg)
+	case loadInitialValues:
+		return m, m.loadInitialValues()
 	}
 
 	return m, nil
 }
 
 func (m *Model) View() string {
+	if !m.initialized {
+		return "Loading..."
+	}
+
 	pad := strings.Repeat(" ", padding)
 	return "\n" +
 		pad + m.models[brightness].View() + "\n\n" +
@@ -90,24 +92,30 @@ func (m *Model) View() string {
 		pad + helpStyle("Press any key to quit")
 }
 
-func (m *Model) nextProperty() {
-	m.selectedProperty++
-	if m.selectedProperty == maxProperty {
-		m.selectedProperty = 0
+func (m *Model) nextSetting() {
+	m.currentSetting++
+	if m.currentSetting == maxSetting {
+		m.currentSetting = 0
 	}
 }
 
-func (m *Model) previousProperty() {
-	if m.selectedProperty == 0 {
-		m.selectedProperty = maxProperty - 1
+func (m *Model) previousSetting() {
+	if m.currentSetting == 0 {
+		m.currentSetting = maxSetting - 1
 		return
 	}
 
-	m.selectedProperty--
+	m.currentSetting--
 }
 
 func tickCmd() tea.Cmd {
-	return tea.Tick(time.Millisecond*300, func(t time.Time) tea.Msg {
+	return tea.Tick(time.Millisecond*100, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
+}
+
+func loadInitialValuesCmd() tea.Cmd {
+	return func() tea.Msg {
+		return loadInitialValues("")
+	}
 }
