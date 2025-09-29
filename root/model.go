@@ -25,6 +25,7 @@ var (
 type Model struct {
 	index         int
 	displayModels []list.Model
+	currentWidth  int
 }
 
 func New() *Model {
@@ -52,11 +53,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Handle the error - the item wasn't a *display.Display
 				return m, nil // or handle error appropriately
 			}
-			newModel := settings.NewModel(m, displayItem)
+			newModel := settings.NewModel(m, displayItem, m.currentWidth)
 			return newModel, newModel.Init()
 		}
 
 	case tea.WindowSizeMsg:
+		m.currentWidth = msg.Width
 		m.loadDisplays(msg.Width, msg.Height)
 	}
 

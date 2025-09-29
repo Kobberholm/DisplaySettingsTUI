@@ -108,3 +108,12 @@ func (m *Model) loadInitialValues() tea.Cmd {
 
 	return tea.Batch(cmds...)
 }
+
+func (m *Model) onWidthChanged(width int) {
+	for i, _ := range m.models {
+		m.models[i].Width = width - padding*2 - 4
+		if m.models[i].Width > maxWidth {
+			m.models[i].Width = maxWidth
+		}
+	}
+}

@@ -18,7 +18,7 @@ type valueModified float64
 
 const (
 	padding  = 2
-	maxWidth = 600
+	maxWidth = 200
 )
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
@@ -32,22 +32,24 @@ type Model struct {
 	cancelFunc     context.CancelFunc
 	ctx            context.Context
 	chanData       chan data
+	currentWidth   int
 }
 
 type data struct {
 	s setting
 }
 
-func NewModel(mainModel tea.Model, display *display.Display) *Model {
+func NewModel(mainModel tea.Model, display *display.Display, width int) *Model {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Model{
-		mainModel:  mainModel,
-		display:    display,
-		ctx:        ctx,
-		cancelFunc: cancel,
-		chanData:   make(chan data, 100),
+		mainModel:    mainModel,
+		display:      display,
+		ctx:          ctx,
+		cancelFunc:   cancel,
+		chanData:     make(chan data, 100),
+		currentWidth: width,
 	}
 }
 
@@ -66,10 +68,7 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.models[m.currentSetting].Width = msg.Width - padding*2 - 4
-		if m.models[m.currentSetting].Width > maxWidth {
-			m.models[m.currentSetting].Width = maxWidth
-		}
+		m.onWidthChanged(msg.Width)
 		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -94,6 +93,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case progress.FrameMsg:
 		return m.updateAll(msg)
 	case loadInitialValues:
+		m.onWidthChanged(m.currentWidth)
 		return m, m.loadInitialValues()
 	case valueModified:
 		select {
