@@ -18,7 +18,7 @@ func GetCommitHash() string {
 	for _, setting := range info.Settings {
 		switch setting.Key {
 		case "vcs.revision":
-			gitCommit = setting.Value
+			gitCommit = setting.Value[0:5]
 		case "vcs.modified":
 			if setting.Value == "true" {
 				modified = true

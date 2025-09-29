@@ -17,7 +17,7 @@ func main() {
 	flag.Parse()
 
 	if *v {
-		fmt.Printf("Version: %s", vcs.GetCommitHash())
+		fmt.Printf("Version: %s\r\n", vcs.GetCommitHash())
 		os.Exit(0)
 	}
 
