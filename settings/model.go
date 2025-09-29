@@ -17,7 +17,15 @@ type tickMsg time.Time
 type loadInitialValues string
 type valueModified float64
 
-const maxWidth = 100
+const (
+	maxWidth           = 100
+	channelBufferSize  = 100
+	debounceDelay      = 100 * time.Millisecond
+	progressBarMargin  = 15  // Space for indicator + label
+	tickInterval       = 100 * time.Millisecond
+	percentageMultiplier = 100
+	adjustmentStep    = 0.05  // 5% adjustment per key press
+)
 
 
 type Model struct {
@@ -45,7 +53,7 @@ func NewModel(mainModel tea.Model, display *display.Display, width int) *Model {
 		display:      display,
 		ctx:          ctx,
 		cancelFunc:   cancel,
-		chanData:     make(chan data, 100),
+		chanData:     make(chan data, channelBufferSize),
 		currentWidth: width,
 	}
 }
@@ -80,9 +88,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down":
 			m.nextSetting()
 		case "left":
-			return m.decrement(0.05)
+			return m.decrement(adjustmentStep)
 		case "right":
-			return m.increment(0.05)
+			return m.increment(adjustmentStep)
 		}
 	case tickMsg:
 		return m, tickCmd()
@@ -161,7 +169,7 @@ func (m *Model) previousSetting() {
 }
 
 func tickCmd() tea.Cmd {
-	return tea.Tick(time.Millisecond*100, func(t time.Time) tea.Msg {
+	return tea.Tick(tickInterval, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
 }
@@ -193,7 +201,7 @@ func (m *Model) eventLoop() {
 
 			case d := <-m.chanData:
 				lastData = &d
-				timer.Reset(100 * time.Millisecond) // Reset debounce timer
+				timer.Reset(debounceDelay) // Reset debounce timer
 
 			case <-timer.C:
 				if lastData != nil {
@@ -206,7 +214,7 @@ func (m *Model) eventLoop() {
 					default:
 						panic("unhandled default case")
 					}
-					value := m.getPercent(lastData.s) * 100
+					value := m.getPercent(lastData.s) * percentageMultiplier
 					err := setVCP(m.display.Index, code, int(value))
 					if err != nil {
 						log.Error("Error setting VCP value", err)

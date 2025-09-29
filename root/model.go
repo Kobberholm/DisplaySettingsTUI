@@ -12,6 +12,8 @@ import (
 	"github.com/charmbracelet/log"
 )
 
+const displayHeightRatio = 4 // Display boxes take up 1/4 of terminal height
+
 
 type Model struct {
 	index         int
@@ -118,7 +120,7 @@ func (m *Model) loadDisplays(width, height int) {
 
 	for i, display := range displayList {
 		// Render a square box
-		m.displayModels[i] = list.New([]list.Item{&display}, list.NewDefaultDelegate(), width, height/4)
+		m.displayModels[i] = list.New([]list.Item{&display}, list.NewDefaultDelegate(), width, height/displayHeightRatio)
 		m.displayModels[i].Title = fmt.Sprintf("Display %d", display.Index)
 		m.displayModels[i].SetShowHelp(false)
 		m.displayModels[i].SetShowStatusBar(false)

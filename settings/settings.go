@@ -113,7 +113,7 @@ func (m *Model) loadInitialValues() tea.Cmd {
 
 func (m *Model) onWidthChanged(width int) {
 	for i, _ := range m.models {
-		m.models[i].Width = width - components.Padding*2 - 15
+		m.models[i].Width = width - components.Padding*2 - progressBarMargin
 		if m.models[i].Width > maxWidth {
 			m.models[i].Width = maxWidth
 		}
