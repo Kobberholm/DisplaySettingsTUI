@@ -118,7 +118,7 @@ func (m *Model) View() string {
 
 	// Build rows
 	rows := []string{
-		components.PageHeader("Display Settings", m.display.Title()),
+		components.PageHeader("Display Settings", m.display.HeaderInfo()),
 		"",
 		m.buildRow(brightness, "Brightness", m.currentSetting == brightness),
 		"",

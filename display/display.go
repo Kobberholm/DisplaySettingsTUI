@@ -15,9 +15,11 @@ import (
 // Display represents information about a detected display
 // Claude generated code. Model Opus 4.1
 type Display struct {
-	Index     int    // Display number (1, 2, etc.)
-	connector string // DRM connector (e.g., "card1-DP-1")
-	serial    string // serial number (e.g., "93QSX34")
+	Index        int    // Display number (1, 2, etc.)
+	connector    string // DRM connector (e.g., "card1-DP-1")
+	serial       string // serial number (e.g., "93QSX34")
+	manufacturer string // manufacturer name (e.g., "DEL - Dell Inc.")
+	model        string // model name (e.g., "DELL P2723DE")
 }
 
 func (d *Display) FilterValue() string {
@@ -25,11 +27,32 @@ func (d *Display) FilterValue() string {
 }
 
 func (d *Display) Title() string {
+	if d.model != "" {
+		return d.model
+	}
 	return d.connector
 }
 
 func (d *Display) Description() string {
-	return d.serial
+	parts := []string{}
+	if d.connector != "" {
+		parts = append(parts, d.connector)
+	}
+	if d.serial != "" {
+		parts = append(parts, d.serial)
+	}
+	if len(parts) > 0 {
+		return strings.Join(parts, " | ")
+	}
+	return d.connector
+}
+
+// HeaderInfo returns a formatted string for display headers
+func (d *Display) HeaderInfo() string {
+	if d.model != "" && d.serial != "" {
+		return fmt.Sprintf("%s (%s)", d.model, d.serial)
+	}
+	return d.Title()
 }
 
 // DetectDisplays runs ddcutil detect and returns parsed display information
@@ -54,6 +77,8 @@ func parseDisplayOutput(output []byte) ([]Display, error) {
 	displayRe := regexp.MustCompile(`^Display\s+(\d+)`)
 	connectorRe := regexp.MustCompile(`^\s+DRM connector:\s+(.+)`)
 	serialRe := regexp.MustCompile(`^\s+Serial number:\s+(.+)`)
+	mfgRe := regexp.MustCompile(`^\s+Mfg id:\s+(.+)`)
+	modelRe := regexp.MustCompile(`^\s+Model:\s+(.+)`)
 
 	var currentDisplay *Display
 
@@ -80,6 +105,14 @@ func parseDisplayOutput(output []byte) ([]Display, error) {
 			// Parse serial number
 			if matches = serialRe.FindStringSubmatch(line); matches != nil {
 				currentDisplay.serial = strings.TrimSpace(matches[1])
+			}
+			// Parse manufacturer
+			if matches = mfgRe.FindStringSubmatch(line); matches != nil {
+				currentDisplay.manufacturer = strings.TrimSpace(matches[1])
+			}
+			// Parse model
+			if matches = modelRe.FindStringSubmatch(line); matches != nil {
+				currentDisplay.model = strings.TrimSpace(matches[1])
 			}
 		}
 	}
