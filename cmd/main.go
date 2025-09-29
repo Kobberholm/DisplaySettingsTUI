@@ -2,6 +2,8 @@ package main
 
 import (
 	"DisplaySettingsTUI/root"
+	"DisplaySettingsTUI/vcs"
+	"flag"
 	"fmt"
 	"os"
 
@@ -10,6 +12,15 @@ import (
 )
 
 func main() {
+	v := flag.Bool("v", false, "Show version information")
+
+	flag.Parse()
+
+	if *v {
+		fmt.Printf("Version: %s", vcs.GetCommitHash())
+		os.Exit(0)
+	}
+
 	f, err := tea.LogToFile("debug.log", "Tea.Debug->")
 	if err != nil {
 		fmt.Println("fatal:", err)

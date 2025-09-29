@@ -15,11 +15,11 @@ import (
 /* STYLING */
 var (
 	columnStyle = lipgloss.NewStyle().
-		Padding(2, 4)
+			Padding(2, 4)
 	focusedStyle = lipgloss.NewStyle().
-		Padding(2, 4).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("62"))
+			Padding(2, 4).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("62"))
 )
 
 type Model struct {
