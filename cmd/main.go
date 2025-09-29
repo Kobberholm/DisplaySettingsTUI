@@ -21,7 +21,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	f, err := tea.LogToFile("debug.log", "Tea.Debug->")
+	f, err := tea.LogToFile("/tmp/debug-display-settings-tui.log", "Tea.Debug->")
 	if err != nil {
 		fmt.Println("fatal:", err)
 		os.Exit(1)
