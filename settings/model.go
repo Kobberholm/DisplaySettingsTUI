@@ -18,7 +18,7 @@ type valueModified float64
 
 const (
 	padding  = 2
-	maxWidth = 200
+	maxWidth = 100
 )
 
 var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render

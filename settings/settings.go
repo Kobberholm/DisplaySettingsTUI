@@ -111,7 +111,7 @@ func (m *Model) loadInitialValues() tea.Cmd {
 
 func (m *Model) onWidthChanged(width int) {
 	for i, _ := range m.models {
-		m.models[i].Width = width - padding*2 - 4
+		m.models[i].Width = width - padding*2 - 15
 		if m.models[i].Width > maxWidth {
 			m.models[i].Width = maxWidth
 		}
