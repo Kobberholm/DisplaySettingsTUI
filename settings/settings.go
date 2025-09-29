@@ -1,6 +1,8 @@
 package settings
 
 import (
+	"DisplaySettingsTUI/components"
+
 	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/log"
@@ -111,7 +113,7 @@ func (m *Model) loadInitialValues() tea.Cmd {
 
 func (m *Model) onWidthChanged(width int) {
 	for i, _ := range m.models {
-		m.models[i].Width = width - padding*2 - 15
+		m.models[i].Width = width - components.Padding*2 - 15
 		if m.models[i].Width > maxWidth {
 			m.models[i].Width = maxWidth
 		}

@@ -1,10 +1,10 @@
 package root
 
 import (
+	"DisplaySettingsTUI/components"
 	"DisplaySettingsTUI/display"
 	"DisplaySettingsTUI/settings"
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,15 +12,6 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-/* STYLING */
-var (
-	columnStyle = lipgloss.NewStyle().
-			Padding(2, 4)
-	focusedStyle = lipgloss.NewStyle().
-			Padding(2, 4).
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("62"))
-)
 
 type Model struct {
 	index         int
@@ -74,21 +65,23 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) View() string {
 
 	if len(m.displayModels) == 0 {
-		return "Loading..."
+		return "\n" + components.CenteredLoading("Detecting displays...", m.currentWidth)
 	}
 
 	displayString := make([]string, len(m.displayModels))
 	for i, d := range m.displayModels {
 		if i == m.index {
-			displayString[i] = focusedStyle.Render(d.View())
+			displayString[i] = components.FocusedStyle.Render(d.View())
 		} else {
-			displayString[i] = columnStyle.Render(d.View())
+			displayString[i] = components.ColumnStyle.Render(d.View())
 		}
 	}
 
 	return lipgloss.JoinVertical(
-		lipgloss.Top, underlinedTitle("Available Displays"),
+		lipgloss.Top,
+		components.UnderlinedTitle("Available Displays"),
 		lipgloss.JoinHorizontal(lipgloss.Left, displayString...),
+		"\n"+components.HelpText(components.RootHelpText),
 	)
 }
 
@@ -108,23 +101,6 @@ func (m *Model) next() {
 	}
 }
 
-func underlinedTitle(text string) string {
-	titleStyle := lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("222")).
-		MarginBottom(0)
-
-	underline := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("22")).
-		MarginBottom(1).
-		Render(strings.Repeat("─", len(text)))
-
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		titleStyle.Render(text),
-		underline,
-	)
-}
 
 func (m *Model) loadDisplays(width, height int) {
 	displayList, err := display.DetectDisplays()

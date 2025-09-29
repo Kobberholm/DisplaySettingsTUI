@@ -1,6 +1,7 @@
 package settings
 
 import (
+	"DisplaySettingsTUI/components"
 	"DisplaySettingsTUI/display"
 	"context"
 	"strings"
@@ -16,12 +17,8 @@ type tickMsg time.Time
 type loadInitialValues string
 type valueModified float64
 
-const (
-	padding  = 2
-	maxWidth = 100
-)
+const maxWidth = 100
 
-var helpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#626262")).Render
 
 type Model struct {
 	mainModel      tea.Model
@@ -108,27 +105,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *Model) View() string {
 	if !m.initialized {
-		return "Loading..."
+		return "\n" + components.LoadingBox("Loading display settings...")
 	}
 
 	// Build rows
 	rows := []string{
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("99")).
-			Bold(true).
-			Render("Display Settings ", m.display.Title()),
+		components.PageHeader("Display Settings", m.display.Title()),
 		"",
 		m.buildRow(brightness, "Brightness", m.currentSetting == brightness),
 		"",
 		m.buildRow(contrast, "Contrast", m.currentSetting == contrast),
 		"",
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("241")).
-			Render("↑/↓ Navigate • ←/→ Adjust • ESC Back • Q Quit"),
+		components.HelpText(components.SettingsHelpText),
 	}
 
 	// Add padding and join
-	pad := strings.Repeat(" ", padding)
+	pad := strings.Repeat(" ", components.Padding)
 	for i, row := range rows {
 		if row != "" {
 			rows[i] = pad + row
@@ -141,14 +133,10 @@ func (m *Model) View() string {
 func (m *Model) buildRow(s setting, label string, selected bool) string {
 	indicator := "  "
 	if selected {
-		indicator = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86")).
-			Bold(true).
-			Render("▶ ")
+		indicator = components.SelectedIndicatorStyle.Render("▶ ")
 	}
 
-	labelStyled := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("252")).
+	labelStyled := components.LabelStyle.
 		Width(12).
 		Align(lipgloss.Left).
 		Render(label + ":")
