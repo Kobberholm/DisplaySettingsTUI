@@ -6,6 +6,8 @@ A terminal user interface (TUI) application for adjusting display brightness and
 ![License](https://img.shields.io/badge/license-MIT-green)
 [![GitHub](https://img.shields.io/badge/GitHub-navinreddy23%2FDisplaySettingsTUI-blue)](https://github.com/navinreddy23/DisplaySettingsTUI)
 
+![Demo](demo.gif)
+
 ## Features
 
 - 🖥️ Auto-detect connected displays
