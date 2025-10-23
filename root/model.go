@@ -14,7 +14,6 @@ import (
 
 const displayHeightRatio = 4 // Display boxes take up 1/4 of terminal height
 
-
 type Model struct {
 	index         int
 	displayModels []list.Model
@@ -35,9 +34,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "q":
 			return m, tea.Quit
-		case "left":
-			m.next()
 		case "right":
+			m.next()
+		case "left":
 			m.prev()
 		case "enter":
 			item := m.displayModels[m.index].Items()[0]
@@ -102,7 +101,6 @@ func (m *Model) next() {
 		m.index = 0
 	}
 }
-
 
 func (m *Model) loadDisplays(width, height int) {
 	displayList, err := display.DetectDisplays()
